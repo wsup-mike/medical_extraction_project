@@ -13,7 +13,8 @@ OUT_PATH  = os.path.join(os.path.dirname(__file__), "..", "structured_output.csv
 
 def main():
     # Load input CSV (requires columns: medical_specialty, transcription)
-    df = pd.read_csv(DATA_PATH)
+    df = pd.read_csv("data/transcriptions.csv")
+    print(df.head()) # quick check to see if it loaded correctly
 
     required = {"medical_specialty", "transcription"}
     missing = required - set(df.columns)
