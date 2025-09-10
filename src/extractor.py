@@ -3,8 +3,14 @@ import json
 from typing import Dict
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
-client = OpenAI()  # reads OPENAI_API_KEY from env
+# Load vars from .env into environment
+load_dotenv()  # reads OPENAI_API_KEY from .env
+print("Loaded API key?", os.getenv("OPENAI_API_KEY")[:8] if os.getenv("OPENAI_API_KEY") else None) # to test our env var once
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  # reads OPENAI_API_KEY from env
 
 # Tool schema: the fields we want out
 FUNCTION_DEFINITION = [{
@@ -17,7 +23,7 @@ FUNCTION_DEFINITION = [{
             "properties": {
                 "Age": {
                     "type": "string",
-                    "description": "Patient age as a string (e.g., '45'). Use 'Unknown' if not mentioned."
+                    "description": "Patient age as a number in years, but written as a string (e.g., '45'). Use 'Unknown' if not mentioned."
                 },
                 "recommended_treatment": {
                     "type": "string",
@@ -60,9 +66,12 @@ def extract_info_with_openai(transcription: str) -> Dict[str, str]:
         try:
             args = json.loads(msg.tool_calls[0].function.arguments)
         except Exception:
+            print("⚠️ Failed to parse tool arguments:", msg.tool_calls[0].function.arguments)
             args = {}
     else:
         # Fallback: try to read plain text (rare if tool schema is provided)
+        # Fallback: log the whole assistant message for debugging
+        print("⚠️ Model did not call tool. Raw message:", msg)
         args = {}
 
     age = (str(args.get("Age", "Unknown")) or "Unknown").strip()

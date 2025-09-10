@@ -1,0 +1,6 @@
+medical_specialty,Age,recommended_treatment,icd_codes
+Allergy / Immunology,23,Try Zyrtec instead of Allegra; Samples of Nasonex two sprays in each nostril for three weeks; A prescription was written.,"['```json\n[""J30.9"", ""J00"", ""R09.81""]\n```']"
+Orthopedic,41,operative fixation,['```json\n[]\n```']
+Bariatrics,30,Laparoscopic antecolic antegastric Roux-en-Y gastric bypass with EEA anastomosis.,"['```json\n[""Z98.84"", ""E66.01"", ""E66.09"", ""K31.84""]\n```']"
+Cardiovascular / Pulmonary,50,"Neck exploration; tracheostomy; urgent flexible bronchoscopy via tracheostomy site; removal of foreign body, tracheal metallic stent material; dilation distal trachea; placement of #8 Shiley single cannula tracheostomy tube.","['```json\n[\n    ""J95.851"",\n    ""J95.850"",\n    ""J44.9"",\n    ""T17.2XXA"",\n    ""T17.2XXD"",\n    ""T17.2XXS"",\n    ""J38.3"",\n    ""J95.820""\n]\n```']"
+Urology,66,Flomax and Proscar,['```json\n[]\n```']
