@@ -1,35 +1,55 @@
 # src/icd_mapper.py
 import json
 from typing import List
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
-client = OpenAI()
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-PROMPT = (
-    "Return a JSON array of likely ICD-10 codes that correspond to the given "
-    "treatment/procedure. Do not include explanations or text—only a JSON array "
-    "of strings. If uncertain, return an empty JSON array.\n\n"
-    "Treatment: {treatment}"
-)
+def normalize_icd_codes(raw: str) -> List[str]:
+    """
+    Clean and normalize the model's ICD output into a Python list of strings.
+    Handles cases with Markdown fences, 'json' tags, or raw text.
+    """
+    if not raw:
+        return []
 
-@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(3))
-def get_icd_codes(treatment: str) -> List[str]:
-    if not treatment or treatment == "Unknown":
-        return ["Unknown"]
+    # Remove code fences like ```json ... ```
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`").lstrip("json").strip()
 
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": PROMPT.format(treatment=treatment)}],
-        temperature=0
-    )
-    raw = resp.choices[0].message.content
-
-    # Try to parse a JSON array; fallback to raw text
+    # Try JSON parse
     try:
-        data = json.loads(raw)
-        if isinstance(data, list):
-            return [str(c).strip() for c in data]
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, list):
+            return [str(code).strip() for code in parsed]
+        if isinstance(parsed, str):
+            return [parsed.strip()]
     except Exception:
         pass
-    return [raw.strip() if raw else "Unknown"]
+
+    # Fallback: split by comma or whitespace
+    return [c.strip() for c in cleaned.replace("\n", ",").split(",") if c.strip()]
+
+def get_icd_codes(treatment: str) -> List[str]:
+    """Ask the model for ICD-10 codes given a treatment/procedure string."""
+    if not treatment or treatment == "Unknown":
+        return []
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Provide the ICD-10 codes for the treatment: '{treatment}'. "
+                "Return only a JSON list of codes, no explanation."
+            )
+        }],
+        temperature=0
+    )
+
+    raw = response.choices[0].message.content
+    return normalize_icd_codes(raw)
